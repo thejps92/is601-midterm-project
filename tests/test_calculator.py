@@ -1,203 +1,138 @@
+import datetime
+from pathlib import Path
+import pandas as pd
 import pytest
-from io import StringIO
-from app.calculator import display_help, display_history, calculator
+import logging
+from unittest.mock import Mock, patch, PropertyMock
+from decimal import Decimal
+from tempfile import TemporaryDirectory
+from app.calculator import Calculator
+from app.calculator_repl import calculator_repl
+from app.calculator_config import CalculatorConfig
+from app.exceptions import OperationError, ValidationError
+from app.history import LoggingObserver, AutoSaveObserver
+from app.operations import OperationFactory
 
-def test_display_help(capsys):
-    display_help()
-    captured = capsys.readouterr()
-    expected_output = """
-Calculator REPL Help
---------------------
-Usage:
-    <operations> <number1> <number2>
-    - Perform a calculation with the specified operations and two numbers.
-    - Supported operations:
-        add       : Adds two numbers.
-        subtract  : Subtracts the second number from the first.
-        multiply  : Multiplies two numbers.
-        divide    : Divides the first number by the second.
-        power     : Raises the first number to the power of the second.
+@pytest.fixture
+def calculator():
+    with TemporaryDirectory() as tmp_dir:
+        tmp_path = Path(tmp_dir)
+        config = CalculatorConfig(base_dir=tmp_path)
 
-Special Commands:
-    help      : Display this help message.
-    history   : Show the history of calculations.
-    exit      : Exit the calculator.
+        with patch.object(CalculatorConfig, 'log_dir', new_callable=PropertyMock) as mock_log_dir, \
+             patch.object(CalculatorConfig, 'log_file', new_callable=PropertyMock) as mock_log_file, \
+             patch.object(CalculatorConfig, 'history_dir', new_callable=PropertyMock) as mock_history_dir, \
+             patch.object(CalculatorConfig, 'history_file', new_callable=PropertyMock) as mock_history_file:
 
-Examples:
-    add 10 5
-    subtract 15.5 3.2
-    multiply 7 8
-    divide 20 4
-    power 2 3
-"""
-    assert captured.out.strip() == expected_output.strip()
+            mock_log_dir.return_value = tmp_path / "logs"
+            mock_log_file.return_value = tmp_path / "logs/calculator.log"
+            mock_history_dir.return_value = tmp_path / "history"
+            mock_history_file.return_value = tmp_path / "history/calculator_history.csv"
 
-def test_display_history_empty(capsys):
-    history = []
-    display_history(history)
-    captured = capsys.readouterr()
-    assert captured.out.strip() == "No calculations performed yet."
+            calc = Calculator(config=config)
 
-def test_display_history_with_entries(capsys):
-    history = [
-        "AddCalculation: 10.0 Add 5.0 = 15.0",
-        "SubtractCalculation: 20.0 Subtract 3.0 = 17.0",
-        "MultiplyCalculation: 7.0 Multiply 8.0 = 56.0",
-        "DivideCalculation: 20.0 Divide 4.0 = 5.0",
-        "PowerCalculation: 2.0 Power 3.0 = 8.0"
-    ]
-    display_history(history)
-    captured = capsys.readouterr()
-    expected_output = """Calculation History:
-1. AddCalculation: 10.0 Add 5.0 = 15.0
-2. SubtractCalculation: 20.0 Subtract 3.0 = 17.0
-3. MultiplyCalculation: 7.0 Multiply 8.0 = 56.0
-4. DivideCalculation: 20.0 Divide 4.0 = 5.0
-5. PowerCalculation: 2.0 Power 3.0 = 8.0"""
-    assert captured.out.strip() == expected_output.strip()
+            # Clear any auto-added calculations or stacks
+            calc.history.clear()  # pragma: no cover
+            calc.undo_stack.clear()  # pragma: no cover
+            calc.redo_stack.clear()  # pragma: no cover
 
-def test_calculator_exit(monkeypatch, capsys):
-    user_input = 'exit\n'
-    monkeypatch.setattr('sys.stdin', StringIO(user_input))
-    with pytest.raises(SystemExit) as exc_info:
-        calculator()
-    captured = capsys.readouterr()
-    assert "Exiting calculator. Goodbye!" in captured.out
-    assert exc_info.type == SystemExit
-    assert exc_info.value.code == 0
+            yield calc
 
-def test_calculator_help_command(monkeypatch, capsys):
-    user_input = 'help\nexit\n'
-    monkeypatch.setattr('sys.stdin', StringIO(user_input))
-    with pytest.raises(SystemExit):
-        calculator()
-    captured = capsys.readouterr()
-    assert "Calculator REPL Help" in captured.out
-    assert "Exiting calculator. Goodbye!" in captured.out
+        for handler in logging.root.handlers[:]:  # pragma: no cover
+            handler.close()
+            logging.root.removeHandler(handler)
 
-def test_calculator_invalid_input(monkeypatch, capsys):
-    user_input = 'invalid input\nadd 5\nsubtract\nexit\n'
-    monkeypatch.setattr('sys.stdin', StringIO(user_input))
-    with pytest.raises(SystemExit):
-        calculator()
-    captured = capsys.readouterr()
-    assert "Invalid input. Please follow the format: <operations> <num1> <num2>" in captured.out
-    assert "Type 'help' for more information." in captured.out
 
-def test_calculator_addition(monkeypatch, capsys):
-    user_input = 'add 10 5\nexit\n'
-    monkeypatch.setattr('sys.stdin', StringIO(user_input))
-    with pytest.raises(SystemExit):
-        calculator()
-    captured = capsys.readouterr()
-    assert "Result: AddCalculation: 10.0 Add 5.0 = 15.0" in captured.out
+def test_calculator_initialization(calculator):
+    assert calculator.history == []
+    assert calculator.undo_stack == []
+    assert calculator.redo_stack == []
+    assert calculator.operation_strategy is None
 
-def test_calculator_subtraction(monkeypatch, capsys):
-    user_input = 'subtract 20 5\nexit\n'
-    monkeypatch.setattr('sys.stdin', StringIO(user_input))
-    with pytest.raises(SystemExit):
-        calculator()
-    captured = capsys.readouterr()
-    assert "Result: SubtractCalculation: 20.0 Subtract 5.0 = 15.0" in captured.out
+def test_add_observer(calculator):
+    observer = LoggingObserver()
+    calculator.add_observer(observer)
+    assert observer in calculator.observers
 
-def test_calculator_multiplication(monkeypatch, capsys):
-    user_input = 'multiply 7 8\nexit\n'
-    monkeypatch.setattr('sys.stdin', StringIO(user_input))
-    with pytest.raises(SystemExit):
-        calculator()
-    captured = capsys.readouterr()
-    assert "Result: MultiplyCalculation: 7.0 Multiply 8.0 = 56.0" in captured.out
+def test_remove_observer(calculator):
+    observer = LoggingObserver()
+    calculator.add_observer(observer)
+    calculator.remove_observer(observer)
+    assert observer not in calculator.observers
 
-def test_calculator_division(monkeypatch, capsys):
-    user_input = 'divide 20 4\nexit\n'
-    monkeypatch.setattr('sys.stdin', StringIO(user_input))
-    with pytest.raises(SystemExit):
-        calculator()
-    captured = capsys.readouterr()
-    assert "Result: DivideCalculation: 20.0 Divide 4.0 = 5.0" in captured.out
+def test_set_operation(calculator):
+    operation = OperationFactory.create_operation('add')
+    calculator.set_operation(operation)
+    assert calculator.operation_strategy == operation
 
-def test_calculator_division_by_zero(monkeypatch, capsys):
-    user_input = 'divide 10 0\nexit\n'
-    monkeypatch.setattr('sys.stdin', StringIO(user_input))
-    with pytest.raises(SystemExit):
-        calculator()
-    captured = capsys.readouterr()
-    assert "Cannot divide by zero." in captured.out
+def test_perform_operation_addition(calculator):
+    operation = OperationFactory.create_operation('add')
+    calculator.set_operation(operation)
+    result = calculator.perform_operation(2, 3)
+    assert result == Decimal('5')
 
-def test_calculator_power(monkeypatch, capsys):
-    user_input = 'power 2 3\nexit\n'
-    monkeypatch.setattr('sys.stdin', StringIO(user_input))
-    with pytest.raises(SystemExit):
-        calculator()
-    captured = capsys.readouterr()
-    assert "Result: PowerCalculation: 2.0 Power 3.0 = 8.0" in captured.out
+def test_perform_operation_validation_error(calculator):
+    calculator.set_operation(OperationFactory.create_operation('add'))
+    with pytest.raises(ValidationError):
+        calculator.perform_operation('invalid', 3)
 
-def test_calculator_history(monkeypatch, capsys):
-    user_input = 'add 10 5\nsubtract 20 3\nhistory\nexit\n'
-    monkeypatch.setattr('sys.stdin', StringIO(user_input))
-    with pytest.raises(SystemExit):
-        calculator()
-    captured = capsys.readouterr()
-    assert "Result: AddCalculation: 10.0 Add 5.0 = 15.0" in captured.out
-    assert "Result: SubtractCalculation: 20.0 Subtract 3.0 = 17.0" in captured.out
-    assert "Calculation History:" in captured.out
-    assert "1. AddCalculation: 10.0 Add 5.0 = 15.0" in captured.out
-    assert "2. SubtractCalculation: 20.0 Subtract 3.0 = 17.0" in captured.out
+def test_perform_operation_operation_error(calculator):
+    with pytest.raises(OperationError, match="No operation set"):
+        calculator.perform_operation(2, 3)
 
-def test_calculator_invalid_number_input(monkeypatch, capsys):
-    user_input = 'add ten five\nexit\n'
-    monkeypatch.setattr('sys.stdin', StringIO(user_input))
-    with pytest.raises(SystemExit):
-        calculator()
-    captured = capsys.readouterr()
-    assert "Invalid input. Please ensure numbers are valid." in captured.out or \
-           "could not convert string to float: 'ten'" in captured.out or \
-           "Invalid input. Please follow the format: <operations> <num1> <num2>" in captured.out
+def test_undo(calculator):
+    operation = OperationFactory.create_operation('add')
+    calculator.set_operation(operation)
+    calculator.perform_operation(2, 3)
+    calculator.undo()
+    assert calculator.history == []
 
-def test_calculator_unsupported_operation(monkeypatch, capsys):
-    user_input = 'modulus 2 3\nexit\n'
-    monkeypatch.setattr('sys.stdin', StringIO(user_input))
-    with pytest.raises(SystemExit):
-        calculator()
-    captured = capsys.readouterr()
-    assert "Unsupported calculation type: 'modulus'." in captured.out
-    assert "Type 'help' to see the list of supported operations." in captured.out
+def test_redo(calculator):
+    operation = OperationFactory.create_operation('add')
+    calculator.set_operation(operation)
+    calculator.perform_operation(2, 3)
+    calculator.undo()
+    calculator.redo()
+    assert len(calculator.history) == 1
 
-def test_calculator_keyboard_interrupt(monkeypatch, capsys):
-    def mock_input(prompt):
-        raise KeyboardInterrupt()
-    monkeypatch.setattr('builtins.input', mock_input)
-    with pytest.raises(SystemExit) as exc_info:
-        calculator()
-    captured = capsys.readouterr()
-    assert "\nKeyboard interrupt detected. Exiting calculator. Goodbye!" in captured.out
-    assert exc_info.value.code == 0
+@patch('app.calculator.pd.DataFrame.to_csv')
+def test_save_history(mock_to_csv, calculator):
+    operation = OperationFactory.create_operation('add')
+    calculator.set_operation(operation)
+    calculator.perform_operation(2, 3)
+    calculator.save_history()
+    mock_to_csv.assert_called_once()
 
-def test_calculator_eof_error(monkeypatch, capsys):
-    def mock_input(prompt):
-        raise EOFError()
-    monkeypatch.setattr('builtins.input', mock_input)
-    with pytest.raises(SystemExit) as exc_info:
-        calculator()
-    captured = capsys.readouterr()
-    assert "\nEOF detected. Exiting calculator. Goodbye!" in captured.out
-    assert exc_info.value.code == 0
+@patch('app.calculator.pd.read_csv')
+@patch('app.calculator.Path.exists', return_value=True)
+def test_load_history(mock_exists, mock_read_csv, calculator):
+    import datetime
+    import pandas as pd
+    from app.calculation import Calculation
 
-def test_calculator_unexpected_exception(monkeypatch, capsys):
-    class MockCalculation:
-        def execute(self):
-            raise Exception("Mock exception during execution")
-        def __str__(self):
-            return "MockCalculation"
+    mock_read_csv.return_value = pd.DataFrame({
+        'operation': ['Addition'],
+        'operand1': ['2'],
+        'operand2': ['3'],
+        'result': ['5'],
+        'timestamp': [datetime.datetime.now().isoformat()]
+    })
 
-    def mock_create_calculation(operations, a, b):
-        return MockCalculation()
+    try:
+        calculator.load_history()
+        assert len(calculator.history) == 1
+        assert calculator.history[0].operation == "Addition"
+        assert calculator.history[0].operand1 == Decimal("2")
+        assert calculator.history[0].operand2 == Decimal("3")
+        assert calculator.history[0].result == Decimal("5")
+    except OperationError:
+        pytest.fail("Loading history failed due to OperationError")
 
-    monkeypatch.setattr('app.calculation.CalculationFactory.create_calculation', mock_create_calculation)
-    user_input = 'add 10 5\nexit\n'
-    monkeypatch.setattr('sys.stdin', StringIO(user_input))
-    with pytest.raises(SystemExit):
-        calculator()
-    captured = capsys.readouterr()
-    assert "An error occurred during calculation: Mock exception during execution" in captured.out
-    assert "Please try again." in captured.out
+def test_clear_history(calculator):
+    operation = OperationFactory.create_operation('add')
+    calculator.set_operation(operation)
+    calculator.perform_operation(2, 3)
+    calculator.clear_history()
+    assert calculator.history == []
+    assert calculator.undo_stack == []
+    assert calculator.redo_stack == []
