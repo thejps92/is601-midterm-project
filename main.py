@@ -1,7 +1,4 @@
-from app.calculator import calculator
-
-def main():
-    calculator()
+from app.calculator_repl import calculator_repl
 
 if __name__ == "__main__":
-    main()
+    calculator_repl()
