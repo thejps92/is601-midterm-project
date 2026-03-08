@@ -12,6 +12,7 @@ from app.operations import (
     Power,
     Root,
     Modulus,
+    IntegerDivision,
     OperationFactory,
 )
 
@@ -192,6 +193,28 @@ class TestModulus(BaseOperationTest):
     }
 
 
+class TestIntegerDivision(BaseOperationTest):
+
+    operation_class = IntegerDivision
+    valid_test_cases = {
+        "positive_numbers": {"a": "7", "b": "2", "expected": "3"},
+        "even_division": {"a": "6", "b": "2", "expected": "3"},
+        "negative_dividend": {"a": "-7", "b": "2", "expected": "-3"},
+        "negative_divisor": {"a": "7", "b": "-2", "expected": "-3"},
+        "both_negative": {"a": "-7", "b": "-2", "expected": "3"},
+        "zero_dividend": {"a": "0", "b": "5", "expected": "0"},
+        "decimals": {"a": "7.5", "b": "2", "expected": "3"},
+    }
+    invalid_test_cases = {
+        "divide_by_zero": {
+            "a": "5",
+            "b": "0",
+            "error": ValidationError,
+            "message": "Division by zero is not allowed"
+        },
+    }
+
+
 class TestOperationFactory:
 
     def test_create_valid_operations(self):
@@ -203,6 +226,7 @@ class TestOperationFactory:
             'power': Power,
             'root': Root,
             'modulus': Modulus,
+            'int_divide': IntegerDivision,
         }
 
         for op_name, op_class in operation_map.items():

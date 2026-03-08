@@ -88,6 +88,18 @@ class Modulus(Operation):
         return a % b
 
 
+class IntegerDivision(Operation):
+
+    def validate_operands(self, a: Decimal, b: Decimal) -> None:
+        super().validate_operands(a, b)
+        if b == 0:
+            raise ValidationError("Division by zero is not allowed")
+
+    def execute(self, a: Decimal, b: Decimal) -> Decimal:
+        self.validate_operands(a, b)
+        return Decimal(int(a / b))
+
+
 class OperationFactory:
 
     _operations: Dict[str, type] = {
@@ -97,7 +109,8 @@ class OperationFactory:
         'divide': Division,
         'power': Power,
         'root': Root,
-        'modulus': Modulus
+        'modulus': Modulus,
+        'int_divide': IntegerDivision
     }
 
     @classmethod
