@@ -27,6 +27,7 @@ def test_repl_help_and_exit():
 
     calc.save_history.assert_called_once()
     assert any("Available commands" in str(call) for call in mock_print.call_args_list)
+    assert any("modulus" in str(call) for call in mock_print.call_args_list)
 
 
 def test_repl_exit_when_save_fails():
@@ -88,6 +89,16 @@ def test_repl_operation_success_normalizes_decimal():
     calc.set_operation.assert_called_once_with(operation)
     calc.perform_operation.assert_called_once_with("2", "4")
     assert any("Result: 2.5" in str(call) for call in mock_print.call_args_list)
+
+
+def test_repl_operation_integer_result_no_scientific_notation():
+    calc = Mock()
+    calc.perform_operation.return_value = Decimal("200")
+
+    _, _, mock_print = _run_repl(["add", "100", "100", "exit"], calc=calc)
+
+    assert any("Result: 200" in str(call) for call in mock_print.call_args_list)
+    assert not any("E" in str(call) for call in mock_print.call_args_list if "Result" in str(call))
 
 
 def test_repl_operation_success_non_decimal_result():

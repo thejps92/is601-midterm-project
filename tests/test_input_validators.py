@@ -9,6 +9,11 @@ config = CalculatorConfig(max_input_value=Decimal('1000000'))
 def test_validate_number_positive_integer():
     assert InputValidator.validate_number(123, config) == Decimal('123')
 
+def test_validate_number_large_integer_no_scientific_notation():
+    result = InputValidator.validate_number(100, config)
+    assert result == Decimal('100')
+    assert 'E' not in str(result)
+
 def test_validate_number_positive_decimal():
     assert InputValidator.validate_number(123.456, config) == Decimal('123.456').normalize()
 

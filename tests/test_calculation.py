@@ -47,6 +47,16 @@ def test_root():
     assert calc.result == Decimal("4")
 
 
+def test_modulus():
+    calc = Calculation(operation="Modulus", operand1=Decimal("10"), operand2=Decimal("3"))
+    assert calc.result == Decimal("1")
+
+
+def test_modulus_by_zero():
+    with pytest.raises(OperationError, match="Modulus by zero is not allowed"):
+        Calculation(operation="Modulus", operand1=Decimal("10"), operand2=Decimal("0"))
+
+
 def test_invalid_root():
     with pytest.raises(OperationError, match="Cannot calculate root of negative number"):
         Calculation(operation="Root", operand1=Decimal("-16"), operand2=Decimal("2"))

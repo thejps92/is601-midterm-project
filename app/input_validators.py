@@ -15,6 +15,9 @@ class InputValidator:
             number = Decimal(str(value))
             if abs(number) > config.max_input_value:
                 raise ValidationError(f"Value exceeds maximum allowed: {config.max_input_value}")  # pragma: no cover
-            return number.normalize()
+            normalized = number.normalize()
+            if normalized.as_tuple().exponent > 0:
+                normalized = normalized.quantize(Decimal('1'))
+            return normalized
         except InvalidOperation as e:
             raise ValidationError(f"Invalid number format: {value}") from e  # pragma: no cover

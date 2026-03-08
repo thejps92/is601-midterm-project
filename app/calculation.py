@@ -31,7 +31,8 @@ class Calculation:
                 Decimal(pow(float(x), 1 / float(y)))
                 if x >= 0 and y != 0
                 else self._raise_invalid_root(x, y)
-            )
+            ),
+            "Modulus": lambda x, y: x % y if y != 0 else self._raise_mod_zero()
         }
 
         op = operations.get(self.operation)
@@ -46,6 +47,10 @@ class Calculation:
     @staticmethod
     def _raise_div_zero():  # pragma: no cover
         raise OperationError("Division by zero is not allowed")
+
+    @staticmethod
+    def _raise_mod_zero():  # pragma: no cover
+        raise OperationError("Modulus by zero is not allowed")
 
     @staticmethod
     def _raise_neg_power():  # pragma: no cover
