@@ -67,6 +67,16 @@ def test_integer_division_by_zero():
         Calculation(operation="IntegerDivision", operand1=Decimal("7"), operand2=Decimal("0"))
 
 
+def test_percentage():
+    calc = Calculation(operation="Percentage", operand1=Decimal("1"), operand2=Decimal("2"))
+    assert calc.result == Decimal("50")
+
+
+def test_percentage_by_zero():
+    with pytest.raises(OperationError, match="Division by zero is not allowed"):
+        Calculation(operation="Percentage", operand1=Decimal("5"), operand2=Decimal("0"))
+
+
 def test_invalid_root():
     with pytest.raises(OperationError, match="Cannot calculate root of negative number"):
         Calculation(operation="Root", operand1=Decimal("-16"), operand2=Decimal("2"))

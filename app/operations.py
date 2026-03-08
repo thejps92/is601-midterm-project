@@ -100,6 +100,18 @@ class IntegerDivision(Operation):
         return Decimal(int(a / b))
 
 
+class Percentage(Operation):
+
+    def validate_operands(self, a: Decimal, b: Decimal) -> None:
+        super().validate_operands(a, b)
+        if b == 0:
+            raise ValidationError("Division by zero is not allowed")
+
+    def execute(self, a: Decimal, b: Decimal) -> Decimal:
+        self.validate_operands(a, b)
+        return (a / b) * Decimal('100')
+
+
 class OperationFactory:
 
     _operations: Dict[str, type] = {
@@ -110,7 +122,8 @@ class OperationFactory:
         'power': Power,
         'root': Root,
         'modulus': Modulus,
-        'int_divide': IntegerDivision
+        'int_divide': IntegerDivision,
+        'percent': Percentage
     }
 
     @classmethod
