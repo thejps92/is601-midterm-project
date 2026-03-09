@@ -34,7 +34,8 @@ def calculator_repl():
 
                 if command == 'help':
                     print(Fore.CYAN + "\nAvailable commands:")
-                    print(Fore.CYAN + "  add, subtract, multiply, divide, power, root, modulus, int_divide, percent, abs_diff - Perform calculations")
+                    for name, desc in OperationFactory.get_operations_help():
+                        print(Fore.CYAN + f"  {name} - {desc}")
                     print(Fore.CYAN + "  history - Show calculation history")
                     print(Fore.CYAN + "  clear - Clear calculation history")
                     print(Fore.CYAN + "  undo - Undo the last calculation")
@@ -100,7 +101,7 @@ def calculator_repl():
                         print(Fore.RED + f"Error loading history: {e}")
                     continue
 
-                if command in ['add', 'subtract', 'multiply', 'divide', 'power', 'root', 'modulus', 'int_divide', 'percent', 'abs_diff']:
+                if OperationFactory.is_valid_operation(command):
                     try:
                         print("\nEnter numbers (or 'cancel' to abort):")
                         a = input("First number: ")

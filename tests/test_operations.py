@@ -293,3 +293,23 @@ class TestOperationFactory:
 
         with pytest.raises(TypeError, match="Operation class must inherit"):
             OperationFactory.register_operation("invalid", InvalidOperation)
+
+    def test_is_valid_operation(self):
+        assert OperationFactory.is_valid_operation('add') is True
+        assert OperationFactory.is_valid_operation('ADD') is True
+        assert OperationFactory.is_valid_operation('nonexistent') is False
+
+    def test_get_operations_help(self):
+        help_list = OperationFactory.get_operations_help()
+        names = [name for name, _ in help_list]
+        assert 'add' in names
+        assert 'subtract' in names
+        assert 'abs_diff' in names
+        # Each entry should have a non-empty description
+        for name, desc in help_list:
+            assert len(desc) > 0
+
+    def test_operation_descriptions(self):
+        assert Addition.description == "Addition (a + b)"
+        assert Division.description == "Division (a / b)"
+        assert AbsoluteDifference.description == "Absolute difference (|a - b|)"

@@ -7,12 +7,14 @@ creation of operation instances by name.
 
 from abc import ABC, abstractmethod
 from decimal import Decimal
-from typing import Dict
+from typing import Dict, List, Tuple
 from app.exceptions import ValidationError
 
 
 class Operation(ABC):
     """Abstract base class for all arithmetic operations (Strategy pattern)."""
+
+    description: str = "Perform operation"
 
     @abstractmethod
     def execute(self, a: Decimal, b: Decimal) -> Decimal:
@@ -27,6 +29,7 @@ class Operation(ABC):
 
 
 class Addition(Operation):
+    description = "Addition (a + b)"
 
     def execute(self, a: Decimal, b: Decimal) -> Decimal:
         self.validate_operands(a, b)
@@ -34,6 +37,7 @@ class Addition(Operation):
 
 
 class Subtraction(Operation):
+    description = "Subtraction (a - b)"
 
     def execute(self, a: Decimal, b: Decimal) -> Decimal:
         self.validate_operands(a, b)
@@ -41,6 +45,7 @@ class Subtraction(Operation):
 
 
 class Multiplication(Operation):
+    description = "Multiplication (a * b)"
 
     def execute(self, a: Decimal, b: Decimal) -> Decimal:
         self.validate_operands(a, b)
@@ -48,6 +53,7 @@ class Multiplication(Operation):
 
 
 class Division(Operation):
+    description = "Division (a / b)"
 
     def validate_operands(self, a: Decimal, b: Decimal) -> None:
         super().validate_operands(a, b)
@@ -60,6 +66,7 @@ class Division(Operation):
 
 
 class Power(Operation):
+    description = "Exponentiation (a ^ b)"
 
     def validate_operands(self, a: Decimal, b: Decimal) -> None:
         super().validate_operands(a, b)
@@ -72,6 +79,7 @@ class Power(Operation):
 
 
 class Root(Operation):
+    description = "Nth root (b-th root of a)"
 
     def validate_operands(self, a: Decimal, b: Decimal) -> None:
         super().validate_operands(a, b)
@@ -86,6 +94,7 @@ class Root(Operation):
 
 
 class Modulus(Operation):
+    description = "Modulus (a mod b)"
 
     def validate_operands(self, a: Decimal, b: Decimal) -> None:
         super().validate_operands(a, b)
@@ -98,6 +107,7 @@ class Modulus(Operation):
 
 
 class IntegerDivision(Operation):
+    description = "Integer division (a / b, truncated)"
 
     def validate_operands(self, a: Decimal, b: Decimal) -> None:
         super().validate_operands(a, b)
@@ -110,6 +120,7 @@ class IntegerDivision(Operation):
 
 
 class Percentage(Operation):
+    description = "Percentage (a / b * 100)"
 
     def validate_operands(self, a: Decimal, b: Decimal) -> None:
         super().validate_operands(a, b)
@@ -122,6 +133,7 @@ class Percentage(Operation):
 
 
 class AbsoluteDifference(Operation):
+    description = "Absolute difference (|a - b|)"
 
     def execute(self, a: Decimal, b: Decimal) -> Decimal:
         self.validate_operands(a, b)
@@ -158,3 +170,16 @@ class OperationFactory:
         if not operation_class:
             raise ValueError(f"Unknown operation: {operation_type}")
         return operation_class()
+
+    @classmethod
+    def is_valid_operation(cls, name: str) -> bool:
+        """Check if an operation name is registered."""
+        return name.lower() in cls._operations
+
+    @classmethod
+    def get_operations_help(cls) -> List[Tuple[str, str]]:
+        """Return a list of (name, description) for all registered operations."""
+        return [
+            (name, op_class.description)
+            for name, op_class in cls._operations.items()
+        ]

@@ -27,6 +27,8 @@ def test_repl_help_and_exit():
 
     calc.save_history.assert_called_once()
     assert any("Available commands" in str(call) for call in mock_print.call_args_list)
+    # Dynamic help menu should list all registered operations
+    assert any("add" in str(call) and "Addition" in str(call) for call in mock_print.call_args_list)
     assert any("int_divide" in str(call) for call in mock_print.call_args_list)
     assert any("percent" in str(call) for call in mock_print.call_args_list)
     assert any("abs_diff" in str(call) for call in mock_print.call_args_list)
