@@ -1,3 +1,9 @@
+"""Memento pattern implementation for calculator undo/redo.
+
+Captures and restores calculator history snapshots to support
+undoing and redoing operations.
+"""
+
 from dataclasses import dataclass, field
 import datetime
 from typing import Any, Dict, List
@@ -7,6 +13,7 @@ from app.calculation import Calculation
 
 @dataclass
 class CalculatorMemento:
+    """Snapshot of calculator history at a point in time."""
 
     history: List[Calculation]
     timestamp: datetime.datetime = field(default_factory=datetime.datetime.now)

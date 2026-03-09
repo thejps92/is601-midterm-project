@@ -1,3 +1,5 @@
+"""Entry point for the calculator application."""
+
 from app.calculator_repl import calculator_repl
 
 if __name__ == "__main__":

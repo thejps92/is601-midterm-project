@@ -1,3 +1,9 @@
+"""Input validation for calculator operands.
+
+Converts raw input to Decimal values, enforces maximum value limits,
+and normalizes scientific notation for display.
+"""
+
 from dataclasses import dataclass
 from decimal import Decimal, InvalidOperation
 import logging
@@ -5,11 +11,14 @@ from typing import Any
 from app.calculator_config import CalculatorConfig
 from app.exceptions import ValidationError
 
+
 @dataclass
 class InputValidator:
-    
+    """Validates and converts user input to Decimal values."""
+
     @staticmethod
     def validate_number(value: Any, config: CalculatorConfig) -> Decimal:
+        """Validate and convert input to a Decimal, enforcing max value limits."""
         try:
             if isinstance(value, str):
                 value = value.strip()

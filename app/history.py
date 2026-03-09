@@ -1,15 +1,25 @@
+"""Observer pattern implementation for calculator history events.
+
+Provides observers that react to new calculations: LoggingObserver logs
+each calculation, and AutoSaveObserver persists history automatically.
+"""
+
 from abc import ABC, abstractmethod
 import logging
 from typing import Any
 from app.calculation import Calculation
 
+
 class HistoryObserver(ABC):
+    """Abstract base class for history observers (Observer pattern)."""
 
     @abstractmethod
     def update(self, calculation: Calculation) -> None:
         pass  # pragma: no cover
 
+
 class LoggingObserver(HistoryObserver):
+    """Logs each calculation to the application log."""
 
     def update(self, calculation: Calculation) -> None:
         if calculation is None:
@@ -20,7 +30,9 @@ class LoggingObserver(HistoryObserver):
             f"{calculation.result}"
         )
 
+
 class AutoSaveObserver(HistoryObserver):
+    """Automatically saves history after each calculation when auto_save is enabled."""
 
     def __init__(self, calculator: Any):
         if not hasattr(calculator, 'config') or not hasattr(calculator, 'save_history'):

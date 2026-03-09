@@ -1,3 +1,10 @@
+"""Configuration management module.
+
+Loads calculator settings from environment variables (via .env file) with
+sensible defaults. Supports overriding log/history directories, precision,
+max input limits, and auto-save behavior.
+"""
+
 from dataclasses import dataclass
 from decimal import Decimal
 from numbers import Number
@@ -13,12 +20,14 @@ load_dotenv()
 
 
 def get_project_root() -> Path:
+    """Return the project root directory (parent of the app package)."""
     current_file = Path(__file__)
     return current_file.parent.parent
 
 
 @dataclass
 class CalculatorConfig:
+    """Calculator configuration loaded from environment variables with defaults."""
 
     def __init__(
         self,
@@ -87,6 +96,7 @@ class CalculatorConfig:
         )).resolve()
 
     def validate(self) -> None:
+        """Validate configuration values and raise ConfigurationError if invalid."""
         if self.max_history_size <= 0:
             raise ConfigurationError("max_history_size must be positive")
         if self.precision <= 0:

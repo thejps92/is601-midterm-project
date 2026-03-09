@@ -1,3 +1,10 @@
+"""Core calculator module.
+
+Provides the Calculator class which manages operation execution, calculation
+history (with undo/redo via the Memento pattern), observer notifications,
+and CSV-based persistence using pandas.
+"""
+
 from decimal import Decimal
 import logging
 import os
@@ -19,6 +26,7 @@ CalculationResult = Union[Number, str]
 
 
 class Calculator:
+    """Main calculator with history, undo/redo, observers, and persistence."""
 
     def __init__(self, config: Optional[CalculatorConfig] = None):
         if config is None:
@@ -88,6 +96,7 @@ class Calculator:
         a: Union[str, Number],
         b: Union[str, Number]
     ) -> CalculationResult:
+        """Validate inputs, execute the current operation, and record the result."""
         if not self.operation_strategy:
             raise OperationError("No operation set")
 
@@ -123,6 +132,7 @@ class Calculator:
             raise OperationError(f"Operation failed: {str(e)}")
 
     def save_history(self) -> None:
+        """Persist calculation history to a CSV file using pandas."""
         try:
             self.config.history_dir.mkdir(parents=True, exist_ok=True)
 
@@ -151,6 +161,7 @@ class Calculator:
             raise OperationError(f"Failed to save history: {e}")
 
     def load_history(self) -> None:
+        """Load calculation history from the CSV file using pandas."""
         try:
             if self.config.history_file.exists():
                 df = pd.read_csv(self.config.history_file)
@@ -175,6 +186,7 @@ class Calculator:
             raise OperationError(f"Failed to load history: {e}")
 
     def get_history_dataframe(self) -> pd.DataFrame:
+        """Return calculation history as a pandas DataFrame."""
         history_data = []
         for calc in self.history:
             history_data.append({
@@ -199,6 +211,7 @@ class Calculator:
         logging.info("History cleared")
 
     def undo(self) -> bool:
+        """Undo the last operation by restoring the previous history state."""
         if not self.undo_stack:
             logging.warning("Undo requested but nothing to undo")
             return False
@@ -209,6 +222,7 @@ class Calculator:
         return True
 
     def redo(self) -> bool:
+        """Redo a previously undone operation."""
         if not self.redo_stack:
             logging.warning("Redo requested but nothing to redo")
             return False

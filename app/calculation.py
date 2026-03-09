@@ -1,3 +1,9 @@
+"""Calculation data model.
+
+Represents a single arithmetic calculation with operands, operation type,
+result, and timestamp. Supports serialization to/from dict for CSV persistence.
+"""
+
 from dataclasses import dataclass, field
 import datetime
 from decimal import Decimal, InvalidOperation
@@ -9,6 +15,7 @@ from app.exceptions import OperationError
 
 @dataclass
 class Calculation:
+    """Immutable record of a performed calculation."""
 
     operation: str
     operand1: Decimal
@@ -21,6 +28,7 @@ class Calculation:
         self.result = self.calculate()
 
     def calculate(self) -> Decimal:
+        """Execute the operation and return the result."""
         operations = {
             "Addition": lambda x, y: x + y,
             "Subtraction": lambda x, y: x - y,
@@ -68,6 +76,7 @@ class Calculation:
         raise OperationError("Invalid root operation")
 
     def to_dict(self) -> Dict[str, Any]:
+        """Serialize this calculation to a dictionary for CSV storage."""
         return {
             'operation': self.operation,
             'operand1': str(self.operand1),
@@ -78,6 +87,7 @@ class Calculation:
 
     @staticmethod
     def from_dict(data: Dict[str, Any]) -> 'Calculation':
+        """Reconstruct a Calculation from a dictionary (e.g., loaded from CSV)."""
         try:
             calc = Calculation(
                 operation=data['operation'],
@@ -122,6 +132,7 @@ class Calculation:
         )
 
     def format_result(self, precision: int = 10) -> str:
+        """Return the result formatted to the given decimal precision."""
         try:
             return str(self.result.normalize().quantize(
                 Decimal('0.' + '0' * precision)

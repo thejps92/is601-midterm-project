@@ -1,3 +1,10 @@
+"""Arithmetic operations module using the Strategy pattern.
+
+Defines an abstract Operation base class and concrete implementations for
+each supported arithmetic operation. An OperationFactory provides dynamic
+creation of operation instances by name.
+"""
+
 from abc import ABC, abstractmethod
 from decimal import Decimal
 from typing import Dict
@@ -5,12 +12,14 @@ from app.exceptions import ValidationError
 
 
 class Operation(ABC):
+    """Abstract base class for all arithmetic operations (Strategy pattern)."""
 
     @abstractmethod
     def execute(self, a: Decimal, b: Decimal) -> Decimal:
         pass # pragma: no cover
 
     def validate_operands(self, a: Decimal, b: Decimal) -> None:
+        """Validate operands before execution. Override in subclasses for specific checks."""
         pass
 
     def __str__(self) -> str:
@@ -120,6 +129,7 @@ class AbsoluteDifference(Operation):
 
 
 class OperationFactory:
+    """Factory for creating Operation instances by name (Factory pattern)."""
 
     _operations: Dict[str, type] = {
         'add': Addition,
@@ -136,12 +146,14 @@ class OperationFactory:
 
     @classmethod
     def register_operation(cls, name: str, operation_class: type) -> None:
+        """Register a new operation class under the given name."""
         if not issubclass(operation_class, Operation):
             raise TypeError("Operation class must inherit from Operation")
         cls._operations[name.lower()] = operation_class
 
     @classmethod
     def create_operation(cls, operation_type: str) -> Operation:
+        """Create and return an Operation instance for the given type name."""
         operation_class = cls._operations.get(operation_type.lower())
         if not operation_class:
             raise ValueError(f"Unknown operation: {operation_type}")

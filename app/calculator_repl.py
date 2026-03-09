@@ -1,3 +1,9 @@
+"""Read-Eval-Print Loop (REPL) for the interactive calculator.
+
+Provides a command-line interface for performing arithmetic operations,
+managing history, and undo/redo support.
+"""
+
 from decimal import Decimal
 import logging
 
@@ -8,6 +14,7 @@ from app.operations import OperationFactory
 
 
 def calculator_repl():
+    """Start the interactive calculator REPL."""
     try:
         calc = Calculator()
 
