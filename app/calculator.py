@@ -200,16 +200,20 @@ class Calculator:
 
     def undo(self) -> bool:
         if not self.undo_stack:
+            logging.warning("Undo requested but nothing to undo")
             return False
         memento = self.undo_stack.pop()
         self.redo_stack.append(CalculatorMemento(self.history.copy()))
         self.history = memento.history.copy()
+        logging.info("Undo performed")
         return True
 
     def redo(self) -> bool:
         if not self.redo_stack:
+            logging.warning("Redo requested but nothing to redo")
             return False
         memento = self.redo_stack.pop()
         self.undo_stack.append(CalculatorMemento(self.history.copy()))
         self.history = memento.history.copy()
+        logging.info("Redo performed")
         return True

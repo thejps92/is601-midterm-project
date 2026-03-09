@@ -37,7 +37,9 @@ def calculator_repl():
                         calc.save_history()
                         print("History saved successfully.")
                     except Exception as e:
+                        logging.warning(f"Could not save history on exit: {e}")
                         print(f"Warning: Could not save history: {e}")
+                    logging.info("Calculator exiting")
                     print("Goodbye!")
                     break
 
@@ -110,20 +112,26 @@ def calculator_repl():
 
                         print(f"\nResult: {result}")
                     except (ValidationError, OperationError) as e:
+                        logging.error(f"Operation error: {e}")
                         print(f"Error: {e}")
                     except Exception as e:
+                        logging.error(f"Unexpected error during operation: {e}")
                         print(f"Unexpected error: {e}")
                     continue
 
+                logging.warning(f"Unknown command entered: '{command}'")
                 print(f"Unknown command: '{command}'. Type 'help' for available commands.")
 
             except KeyboardInterrupt:
+                logging.warning("Operation cancelled by user (KeyboardInterrupt)")
                 print("\nOperation cancelled")
                 continue
             except EOFError:
+                logging.info("Input terminated (EOFError)")
                 print("\nInput terminated. Exiting...")
                 break
             except Exception as e:
+                logging.error(f"Unexpected error in REPL loop: {e}")
                 print(f"Error: {e}")
                 continue
 
