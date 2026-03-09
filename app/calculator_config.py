@@ -22,17 +22,22 @@ class CalculatorConfig:
 
     def __init__(
         self,
-        base_dir: Optional[Path] = None,
+        log_dir: Optional[str] = None,
+        history_dir: Optional[str] = None,
         max_history_size: Optional[int] = None,
         auto_save: Optional[bool] = None,
         precision: Optional[int] = None,
         max_input_value: Optional[Number] = None,
-        default_encoding: Optional[str] = None
+        default_encoding: Optional[str] = None,
+        base_dir: Optional[Path] = None
     ):
         project_root = get_project_root()
-        self.base_dir = base_dir or Path(
+        self._base_dir = base_dir or Path(
             os.getenv('CALCULATOR_BASE_DIR', str(project_root))
         ).resolve()
+
+        self._log_dir = log_dir or os.getenv('CALCULATOR_LOG_DIR', None)
+        self._history_dir = history_dir or os.getenv('CALCULATOR_HISTORY_DIR', None)
 
         self.max_history_size = max_history_size or int(
             os.getenv('CALCULATOR_MAX_HISTORY_SIZE', '1000')
@@ -57,17 +62,15 @@ class CalculatorConfig:
 
     @property
     def log_dir(self) -> Path:
-        return Path(os.getenv(
-            'CALCULATOR_LOG_DIR',
-            str(self.base_dir / "logs")
-        )).resolve()
+        if self._log_dir:
+            return Path(self._log_dir).resolve()
+        return (self._base_dir / "logs").resolve()
 
     @property
     def history_dir(self) -> Path:
-        return Path(os.getenv(
-            'CALCULATOR_HISTORY_DIR',
-            str(self.base_dir / "history")
-        )).resolve()
+        if self._history_dir:
+            return Path(self._history_dir).resolve()
+        return (self._base_dir / "history").resolve()
 
     @property
     def history_file(self) -> Path:

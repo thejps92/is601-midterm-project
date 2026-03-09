@@ -22,7 +22,6 @@ wheels/
 venv/
 env/
 ENV/
-.env
 .venv
 .python-version
 

@@ -33,19 +33,23 @@ def test_default_configuration():
 
 def test_custom_configuration():
     config = CalculatorConfig(
+        log_dir='./custom_logs',
+        history_dir='./custom_history',
         max_history_size=300,
         auto_save=True,
         precision=5,
         max_input_value=Decimal("500"),
         default_encoding="ascii"
     )
+    assert config.log_dir == Path('./custom_logs').resolve()
+    assert config.history_dir == Path('./custom_history').resolve()
     assert config.max_history_size == 300
     assert config.auto_save is True
     assert config.precision == 5
     assert config.max_input_value == Decimal("500")
     assert config.default_encoding == "ascii"
 
-def test_directory_properties():
+def test_directory_properties_from_base_dir():
     clear_env_vars('CALCULATOR_LOG_DIR', 'CALCULATOR_HISTORY_DIR')
     config = CalculatorConfig(base_dir=Path('/custom_base_dir'))
     assert config.log_dir == Path('/custom_base_dir/logs').resolve()
@@ -116,12 +120,12 @@ def test_get_project_root():
     from app.calculator_config import get_project_root
     assert (get_project_root() / "app").exists()
 
-def test_log_dir_property():
+def test_log_dir_property_from_base_dir():
     clear_env_vars('CALCULATOR_LOG_DIR')
     config = CalculatorConfig(base_dir=Path('/new_base_dir'))
     assert config.log_dir == Path('/new_base_dir/logs').resolve()
 
-def test_history_dir_property():
+def test_history_dir_property_from_base_dir():
     clear_env_vars('CALCULATOR_HISTORY_DIR')
     config = CalculatorConfig(base_dir=Path('/new_base_dir'))
     assert config.history_dir == Path('/new_base_dir/history').resolve()
@@ -135,3 +139,11 @@ def test_history_file_property():
     clear_env_vars('CALCULATOR_HISTORY_FILE')
     config = CalculatorConfig(base_dir=Path('/new_base_dir'))
     assert config.history_file == Path('/new_base_dir/history/calculator_history.csv').resolve()
+
+def test_log_dir_constructor_param_overrides_env():
+    config = CalculatorConfig(log_dir='./override_logs')
+    assert config.log_dir == Path('./override_logs').resolve()
+
+def test_history_dir_constructor_param_overrides_env():
+    config = CalculatorConfig(history_dir='./override_history')
+    assert config.history_dir == Path('./override_history').resolve()
