@@ -77,6 +77,11 @@ def test_percentage_by_zero():
         Calculation(operation="Percentage", operand1=Decimal("5"), operand2=Decimal("0"))
 
 
+def test_absolute_difference():
+    calc = Calculation(operation="AbsoluteDifference", operand1=Decimal("3"), operand2=Decimal("5"))
+    assert calc.result == Decimal("2")
+
+
 def test_invalid_root():
     with pytest.raises(OperationError, match="Cannot calculate root of negative number"):
         Calculation(operation="Root", operand1=Decimal("-16"), operand2=Decimal("2"))

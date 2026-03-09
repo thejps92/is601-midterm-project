@@ -29,6 +29,7 @@ def test_repl_help_and_exit():
     assert any("Available commands" in str(call) for call in mock_print.call_args_list)
     assert any("int_divide" in str(call) for call in mock_print.call_args_list)
     assert any("percent" in str(call) for call in mock_print.call_args_list)
+    assert any("abs_diff" in str(call) for call in mock_print.call_args_list)
 
 
 def test_repl_exit_when_save_fails():

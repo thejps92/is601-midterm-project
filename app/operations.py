@@ -112,6 +112,13 @@ class Percentage(Operation):
         return (a / b) * Decimal('100')
 
 
+class AbsoluteDifference(Operation):
+
+    def execute(self, a: Decimal, b: Decimal) -> Decimal:
+        self.validate_operands(a, b)
+        return abs(a - b)
+
+
 class OperationFactory:
 
     _operations: Dict[str, type] = {
@@ -123,7 +130,8 @@ class OperationFactory:
         'root': Root,
         'modulus': Modulus,
         'int_divide': IntegerDivision,
-        'percent': Percentage
+        'percent': Percentage,
+        'abs_diff': AbsoluteDifference
     }
 
     @classmethod
